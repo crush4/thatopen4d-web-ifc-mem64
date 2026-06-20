@@ -1,0 +1,41 @@
+diff --git a/src/cpp/CMakeLists.txt b/src/cpp/CMakeLists.txt
+index eff7cf8..b0e569b 100644
+--- a/src/cpp/CMakeLists.txt
++++ b/src/cpp/CMakeLists.txt
+@@ -100,20 +100,32 @@ function(PARAM_SETTER THE_EXECUTABLE)
+ endfunction()
+ 
+ if(EMSCRIPTEN)
++	# THATOPEN4D MEMORY64-SPIKE PATCH:
++	# - `-sMEMORY64=1` aktiviert wasm64 → 64-Bit-Pointer, kein 4-GB-Heap-Limit
++	# - `-sWASM_BIGINT` wird durch MEMORY64=1 automatisch aktiviert (JS-API
++	#   reicht Pointers als BigInt durch — daher braucht der JS-Wrapper
++	#   eventuell Anpassungen)
++	# - `MAXIMUM_MEMORY=16GB` als grosszuegigere Obergrenze (theoretisch
++	#   koennten wir das ganz weglassen, aber als Sanity-Cap drinlassen)
++	# - target_compile_options mit `-sMEMORY64=1`: muss sowohl in Compile-
++	#   als auch in Link-Phase gesetzt sein, sonst ABI-Mismatch
++
+ 	# build parameters for web-ifc
+ 	add_executable(web-ifc ${web-ifc-source} ${web-ifc-wasm})
+ 	param_setter(web-ifc)
+-	set_target_properties(web-ifc PROPERTIES LINK_FLAGS "${DEBUG_FLAG} --bind -flto --define-macro=REAL_T_IS_DOUBLE -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=4GB -sSTACK_SIZE=5MB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s ENVIRONMENT=web  -sASSERTIONS=1 -s EXPORTED_RUNTIME_METHODS=\"['HEAPU8','HEAPU32','HEAPF32']\"")
++	target_compile_options(web-ifc PUBLIC "-sMEMORY64=1")
++	set_target_properties(web-ifc PROPERTIES LINK_FLAGS "${DEBUG_FLAG} --bind -flto --define-macro=REAL_T_IS_DOUBLE -sMEMORY64=1 -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=16GB -sSTACK_SIZE=5MB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s ENVIRONMENT=web  -sASSERTIONS=1 -s EXPORTED_RUNTIME_METHODS=\"['HEAPU8','HEAPU32','HEAPF32']\"")
+ 
+ 	add_executable(web-ifc-node ${web-ifc-source} ${web-ifc-wasm})
+ 	param_setter(web-ifc-node)
+-	set_target_properties(web-ifc-node PROPERTIES LINK_FLAGS "${DEBUG_FLAG} --bind -flto --define-macro=REAL_T_IS_DOUBLE -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=4GB -sSTACK_SIZE=5MB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s EXPORTED_RUNTIME_METHODS=\"['HEAPU8','HEAPU32','HEAPF32']\"")
++	target_compile_options(web-ifc-node PUBLIC "-sMEMORY64=1")
++	set_target_properties(web-ifc-node PROPERTIES LINK_FLAGS "${DEBUG_FLAG} --bind -flto --define-macro=REAL_T_IS_DOUBLE -sMEMORY64=1 -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=16GB -sSTACK_SIZE=5MB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s EXPORTED_RUNTIME_METHODS=\"['HEAPU8','HEAPU32','HEAPF32']\"")
+ 
+ 	# multi-treaded versions
+ 	add_executable(web-ifc-mt ${web-ifc-source} ${web-ifc-wasm})
+ 	param_setter(web-ifc-mt)
+-	target_compile_options(web-ifc-mt PUBLIC "-pthread")
+-	set_target_properties(web-ifc-mt PROPERTIES LINK_FLAGS "${DEBUG_FLAG} -pthread -s PTHREAD_POOL_SIZE=navigator.hardwareConcurrency --bind -flto --define-macro=REAL_T_IS_DOUBLE -sSTACK_SIZE=5MB -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=4GB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s ENVIRONMENT=web,worker")
++	target_compile_options(web-ifc-mt PUBLIC "-pthread" "-sMEMORY64=1")
++	set_target_properties(web-ifc-mt PROPERTIES LINK_FLAGS "${DEBUG_FLAG} -pthread -s PTHREAD_POOL_SIZE=navigator.hardwareConcurrency --bind -flto --define-macro=REAL_T_IS_DOUBLE -sMEMORY64=1 -sSTACK_SIZE=5MB -s ALLOW_MEMORY_GROWTH=1 -s DYNAMIC_EXECUTION=0 -s MAXIMUM_MEMORY=16GB -s EXPORT_NAME=WebIFCWasm -s MODULARIZE=1 -s ENVIRONMENT=web,worker")
+ endif()
+ 
+ if(NOT EMSCRIPTEN)

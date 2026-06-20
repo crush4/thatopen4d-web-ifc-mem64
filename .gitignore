@@ -1,0 +1,12 @@
+node_modules/
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+# Build-Artefakte aus dem vendor/-Submodule ausblenden — wir extrahieren
+# nur die fertigen Dateien nach ./dist/ (committed).
+vendor/web-ifc/dist/
+vendor/web-ifc/node_modules/
+vendor/web-ifc/src/cpp/build_wasm/
+vendor/web-ifc/src/cpp/build_wasm_debug/

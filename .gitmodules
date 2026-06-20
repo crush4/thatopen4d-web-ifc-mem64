@@ -1,0 +1,3 @@
+[submodule "vendor/web-ifc"]
+	path = vendor/web-ifc
+	url = https://github.com/ThatOpen/engine_web-ifc.git

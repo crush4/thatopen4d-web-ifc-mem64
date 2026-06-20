@@ -1,0 +1,40 @@
+diff --git a/src/cpp/wasm/web-ifc-wasm.cpp b/src/cpp/wasm/web-ifc-wasm.cpp
+index 93e72ce..af1f65f 100644
+--- a/src/cpp/wasm/web-ifc-wasm.cpp
++++ b/src/cpp/wasm/web-ifc-wasm.cpp
+@@ -54,7 +54,11 @@ int OpenModel(webifc::manager::LoaderSettings settings, emscripten::val callback
+     auto modelID = manager.CreateModel(settings);
+     const std::function<uint32_t(char *, size_t, size_t)> loaderFunc = [callback](char *dest, size_t sourceOffset, size_t destSize)
+     {
+-        emscripten::val retVal = callback((uint32_t)dest, sourceOffset, destSize);
++        // THATOPEN4D MEMORY64-PATCH: bei wasm64 ist `char*` 64-Bit. Frueheres
++        // `(uint32_t)dest` schnitt die oberen 32 Bit ab → kaputter Pointer
++        // bei Heaps > 4 GB. `uintptr_t` ist 32-Bit auf wasm32 und 64-Bit auf
++        // wasm64 — JS-Seite bekommt entsprechend Number oder BigInt.
++        emscripten::val retVal = callback((uintptr_t)dest, sourceOffset, destSize);
+         uint32_t len = retVal.as<uint32_t>();
+         return len;
+     };
+@@ -68,7 +72,8 @@ void SaveModel(uint32_t modelID, emscripten::val callback)
+     if (!manager.IsModelOpen(modelID))
+         return;
+     manager.GetIfcLoader(modelID)->SaveFile([&](char *src, size_t srcSize)
+-                                            { emscripten::val retVal = callback((uint32_t)src, srcSize); }, false);
++                                            // THATOPEN4D MEMORY64-PATCH: siehe OpenModel-Callback oben.
++                                            { emscripten::val retVal = callback((uintptr_t)src, srcSize); }, false);
+ }
+ 
+ int GetModelSize(uint32_t modelID)
+@@ -686,7 +691,11 @@ emscripten::val ReadValue(uint32_t modelID, webifc::parsing::IfcTokenType t)
+     }
+     case webifc::parsing::IfcTokenType::INTEGER:
+     {
+-        long d = loader->GetIntArgument();
++        // THATOPEN4D MEMORY64-PATCH: `long` ist auf wasm64 8 Byte → passt nicht
++        // in den Wire-Type-Slot von emscripten::val (4 Byte). Cast auf int32_t,
++        // weil IFC-INTEGER-Werte praktisch nie ueber 2^31 hinausgehen
++        // (waeren auch in JSON-Land Probleme). Auf wasm32 unveraendert.
++        int32_t d = static_cast<int32_t>(loader->GetIntArgument());
+         return emscripten::val(d);
+     }
+     case webifc::parsing::IfcTokenType::REF:
