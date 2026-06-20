@@ -1,6 +1,6 @@
 {
-  "name": "@thatopen4d/web-ifc-mem64",
-  "version": "0.0.77-mem64.1",
+  "name": "web-ifc",
+  "version": "0.0.77-mem64.2",
   "description": "Memory64-Build von @thatopen/engine_web-ifc — kein 4-GB-WASM-Heap-Limit. Drop-in-Ersatz fuer die offizielle web-ifc-Bibliothek bei IFC-Dateien jenseits 1.5 GB.",
   "license": "MPL-2.0",
   "private": false,
